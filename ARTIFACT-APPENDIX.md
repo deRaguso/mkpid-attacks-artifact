@@ -8,25 +8,6 @@ Requested Badge(s):
   - [x] **Functional**
   - [x] **Reproduced**
 
-Authors can provide this content _either_ as a separate file in their artifact
-_or_ as part of their existing documentation (e.g., `README.md`). In the latter
-case, you should have the same section titles as in this template.
-
-This template includes several placeholders. When filling in this template for
-their artifact, the authors should:
-
-1. Remove this note.
-2. Delete the sections that are _not_ required for the badge(s) they are
-   applying for.
-3. Omit suffixes of the form "(required/encouraged for badge ...)" from the
-   section titles.
-4. Authors should not leave the placeholder descriptions initially provided with
-   this file into the submitted version with their artifact.
-
-While this template is provided for artifact review, you should write your
-instructions for someone trying to reuse your artifact in the future (i.e., not
-an artifact reviewer).
-
 ## Description
 
 This repository contains the artifacts accompanying the paper "Beyond the Output: Inference Attacks on Private Set Union and Multi-Key Private Matching" by Andrea Raguso, Francesca Falzon, Tianxin Tang, and Kenneth Paterson, published at PETs 2026.
