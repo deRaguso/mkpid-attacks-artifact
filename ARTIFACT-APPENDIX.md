@@ -66,7 +66,7 @@ https://github.com/deRaguso/mkpid-attacks-artifact/tree/main).
 Start by cloning the repository and changing your current working directory to the repository.
 
 ```bash
-git clone git@github.com:deRaguso/mkpid-attacks-artifact.git
+git clone https://github.com/deRaguso/mkpid-attacks-artifact.git
 cd mkpid-attacks-artifact
 ```
 
