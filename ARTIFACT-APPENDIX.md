@@ -30,12 +30,12 @@ an artifact reviewer).
 ## Description
 
 This repository contains the artifacts accompanying the paper "Beyond the Output: Inference Attacks on Private Set Union and Multi-Key Private Matching" by Andrea Raguso, Francesca Falzon, Tianxin Tang, and Kenneth Paterson, published at PETs 2026.
-In the paper, we present several inference attacks, which allows an adversary that is allowed to interact with an ideal functionality to gain information about the non-adversarial inputs. We present attacks against the following functionalities: PSU, PSU-CA, the ideal functionality of Meta's multi-key PrivateID protocol (MK-PrivateID) $\mathcal{F}_{\textsf{MKPM}}$, and the extended functionality of MK-PrivateID that includes additional protocol leakage $\mathcal{F}_{\textsf{L-MKPM}}$.
+In the paper, we present several inference attacks, which allows an adversary that is allowed to interact with an ideal functionality to gain information about the non-adversarial inputs. We present attacks against the following functionalities: PSU, PSU-CA, the ideal functionality of Meta's multi-key PrivateID protocol (MK-PrivateID) $F_{MKPM}$, and the extended functionality of MK-PrivateID that includes additional protocol leakage $F_{L-MKPM}$.
 
 This artifact repository contains implementations of said attacks and the corresponding functionalities, as well as a measurement infrastructure to evaluate the efficiency of our attacks. We measure both the attack runtimes, as well as the number of queries (ideal functionality evaluations) performed by the attack.
 
 The artifact broadly has three stages: Data generation for the attacks against MK-PrivateID, performing measurements, and formatting data.
-The final output of this artifact is a set of CSV files which contain the measurements which we plot in our paper.
+The final output of this artifact is a set of CSV files that contain the measurements we plot in our paper.
 
 ### Security/Privacy Issues and Ethical Concerns
 Our artifact consists of simple measurements run locally on a single core (per experiment). Our attacks are run on synthetically generated data.
@@ -249,7 +249,7 @@ a target set $T$ whose size we vary from $50\%$ to $150\%$ of $|Y|$ in $10\%$ in
 Furthermore, we vary the intersection ratio $\rho := |T \cap Y|/|T|$ from $0\%$ to $100\%$, also in $10\%$ increments. For the attack against PSU-CA, we further vary the allocated query budget from $10\%$ to $100\%$ of the theoretical upper bound of queries in $10\%$ increments. This is not necessary for the attack against PSU, since it always performs two queries.
 We set $|Y|=10^6$ for the attack against PSU and $|Y|=10^4$ for the attack against PSU-CA.
 
-The data for the attacks against $\mathcal{F}_{\textsf{L-MKPM}}$ is generated very similarly, with the exception that instead of simple sets, we now consider the sets of records located under `experiment_data/paper`. They were generated using
+The data for the attacks against $F_{\textsf{L-MKPM}}$ is generated very similarly, with the exception that instead of simple sets, we now consider the sets of records located under `experiment_data/paper`. They were generated using
 
 ```bash
 python3 gen_MKPID_data.py <destination_directory> 2 10000
