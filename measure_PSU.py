@@ -6,22 +6,31 @@ from time import time_ns
 from constants import *
 import argparse
 import helper
+import datetime
+from os.path import join
 
 priorities = [(PRIO_POS, prio_PSI_pos), (PRIO_NEG, prio_PSI_neg), (PRIO_TOT, prio_PSI_tot)]
+main_body_priority = PRIO_POS # priority function discussed in main body of paper
 
-
-def measure_PSUCA(T, V, match_rate, repetitions, out_directory, qb_increment=0.1, silent=False):
-	
+def measure_PSUCA(T, V, match_rate, repetitions, out_directory, qb_increment=0.1, silent=False, omit_appendix=False):
 	theoretical_upper = len(T) + 1
-	inc = int(theoretical_upper * qb_increment)
+	inc = max(1,int(theoretical_upper * qb_increment))
 
 	intersection = set(T).intersection(set(V))
 	unmatched_T = set(T).difference(set(V))
 
 	for qb in range(inc, theoretical_upper + inc, inc):
+		if omit_appendix and qb < theoretical_upper:
+			continue
+
 		if not silent:
 			print(f"QB: {qb}")
+		
 		for (prio_name, prio_func) in priorities:
+			if omit_appendix and prio_name != main_body_priority:
+				# omit experiments discussed in paper appendix to decrease compute-time
+				continue
+
 			data = {
 				TIME_ALL: [],
 				NUM_QUERIES: [],
@@ -48,7 +57,7 @@ def measure_PSUCA(T, V, match_rate, repetitions, out_directory, qb_increment=0.1
 				helper.update_dict(data, info)
 
 			measurement = {
-				EXP_NAME: f"T{n}V{m}_{match_rate}",
+				EXP_NAME: f"T{len(T)}V{len(V)}_{match_rate}",
 				EXP_LEN_T: len(T),
 				EXP_LEN_V: len(V),
 				EXP_MATCH_V_FRACTION: match_rate,
@@ -88,7 +97,7 @@ def measure_PSU(T, V, match_rate, repetitions, out_directory):
 		neg_recov.append(len(T) - len(pos)) # attack is always successful, so this is technically redundant
 	
 	measurement = {
-		EXP_NAME: f"T{n}V{m}_{match_rate}",
+		EXP_NAME: f"T{len(T)}V{len(V)}_{match_rate}",
 		EXP_LEN_T: len(T),
 		EXP_LEN_V: len(V),
 		EXP_MATCH_V_FRACTION: match_rate,
@@ -116,6 +125,54 @@ def gen_sets(n, m, intersection_ratio):
 	shuffle(V)
 	assert len(T) == n and len(V) == m
 	return T, V
+
+def measure_PSU_PSUCA_experiments(out_directory, m_PSU, m_PSUCA, repetitions, core_id, num_cores=None, silent=False, omit_appendix=False):
+	seed(0xCAFEBABE)
+
+	if num_cores is None:
+		# full paper experiment, we have 11 cores
+		ranges = [(i, i+1) for i in range(5,16)]
+	else:
+		assert num_cores <= 11
+		assert core_id < num_cores
+		num_experiments = 11 // num_cores
+		ranges = [(5 + i * num_experiments, 5 + (i + 1) * num_experiments) for i in range(num_cores)]
+		(a,b) = ranges[-1]
+		ranges[-1] = (a, 16)
+	
+	for frac in [i / 10 for i in range(0, 11)]:
+		for t_frac in [i/10 for i in range(ranges[core_id][0], ranges[core_id][1])]:
+			n = int(t_frac * m_PSU)
+			if n * frac > m_PSU:
+				break
+			
+			if not silent:
+				print(f"Experiment: PSU, n={n}, m={m_PSU}, intersection ratio={frac}")
+				print("generating data")
+			
+			T, V = gen_sets(n, m_PSU, frac)
+			
+			if not silent:
+				print("running measurements")
+				
+			measure_PSU(T, V, frac, repetitions, out_directory)
+
+	for frac in [i / 10 for i in range(0, 11)]:
+		for t_frac in [i/10 for i in range(ranges[core_id][0], ranges[core_id][1])]:
+			n = int(t_frac * m_PSUCA)
+			if n * frac > m_PSUCA:
+				break
+			
+			if not silent:
+				print(f"Experiment: PSU-CA, n={n}, m={m_PSUCA}, intersection ratio={frac}")
+				print("generating data")
+			
+			T, V = gen_sets(n, m_PSUCA, frac)
+			
+			if not silent:
+				print("running measurements")
+
+			measure_PSUCA(T, V, frac, repetitions, out_directory, silent=silent, omit_appendix=omit_appendix)
 
 V_size_PSU = 1_000_000
 V_size_PSUCA = 10_000

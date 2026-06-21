@@ -10,7 +10,7 @@ from measure_recon_attacks import MeasureReconAttacksSingle
 from mkpsi_querybudget import MeasureMKPSISingle
  
 
-def do_run(experiments, out_directory, repetitions, silent):
+def do_run(experiments, out_directory, repetitions, silent, omit_appendix):
 	for experiment in experiments:
 		if not silent:
 			print(f"running experiment: {experiment[EXP_NAME]}")
@@ -23,7 +23,7 @@ def do_run(experiments, out_directory, repetitions, silent):
 		ID_V = helper.IDs(V)
 		intersection = ID_T.intersection(ID_V)
 		unmatched_ids_T = len(ID_T) - len(intersection)
-		MeasureMKPSISingle(experiment, V, T, ID_T, ID_V, intersection, unmatched_ids_T, out_directory, repetitions, time_func=time.time_ns, query_budget_increment_fraction=0.1, silent=silent)
+		MeasureMKPSISingle(experiment, V, T, ID_T, ID_V, intersection, unmatched_ids_T, out_directory, repetitions, time_func=time.time_ns, query_budget_increment_fraction=0.1, silent=silent, omit_appendix=omit_appendix)
 	
 # assign experiments to cores 0..50 in a way that should distribute the load more or less evenly
 def assign_experiments(experiments, core_id):
@@ -54,6 +54,22 @@ def assign_experiments(experiments, core_id):
 		upper_idx += 1
 
 	return [experiments[lower_chunk * 11 + lower_idx], experiments[upper_chunk * 11 + upper_idx]]
+
+def run_leakage_experiments(experiments_directory, out_directory, repetitions, core_id, silent=False, num_cores=None, omit_appendix=False):
+	experiments = helper.get_experiments(experiments_directory)
+	
+	if num_cores is None or num_cores == 50: # full paper experiment
+		experiments = assign_experiments(experiments, core_id)
+	else: # custom number of cores 
+		num_experiments = len(experiments) // num_cores
+		if core_id == num_cores - 1:
+			experiments = experiments[core_id * num_experiments:]
+		else:
+			experiments = experiments[core_id * num_experiments : (core_id + 1) *num_experiments]
+
+	if not silent:
+		print(f"Core {core_id} running experiments: ", [e[EXP_NAME] for e in experiments])
+	do_run(experiments, out_directory, repetitions, silent, omit_appendix)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -92,16 +108,11 @@ if __name__ == '__main__':
 	
 	
 	core_id = int(args.core_id)
-	assert  0 <= core_id <= 60
 
-	# out_directory = join(out_directory, f"core{core_id}")
-	# if not exists(out_directory):
-	# 	makedirs(out_directory)
-		
 	experiments = assign_experiments(experiments, core_id)
 	if not silent:
 		print(f"Core {core_id} running experiments: ", [e[EXP_NAME] for e in experiments])
-	do_run(experiments, out_directory, repetitions, silent)
+	do_run(experiments, out_directory, repetitions, silent, omit_appendix=False)
 
 
 

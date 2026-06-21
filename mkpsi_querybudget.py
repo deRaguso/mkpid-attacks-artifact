@@ -5,20 +5,26 @@ from constants import *
 import helper
 import time
 
-def MeasureMKPSISingle(experiment, V, T, ID_T, ID_V, intersection, unmatched_ids_T, out_directory, repetitions=100, time_func=time.time, query_budget_increment_fraction=0.05, silent=False):
+def MeasureMKPSISingle(experiment, V, T, ID_T, ID_V, intersection, unmatched_ids_T, out_directory, repetitions=100, time_func=time.time, query_budget_increment_fraction=0.05, silent=False, omit_appendix=False):
 	priorities = [(PRIO_TOT, PriorityTotal), (PRIO_POS, PriorityPos), (PRIO_NEG, PriorityNeg)]
+	main_body_priority = PRIO_POS # priority function discussed in main body of paper
 	
 	MPMC = MPMCFunctionality(V)
 	
 	for (prio_name, prio) in priorities:
+		if omit_appendix and prio_name != main_body_priority:
+			continue
 		if not silent:
 			print(f"Priority: ", prio_name)
 		theoretical_max_queries = len(T)
 		inc = max(1, floor(theoretical_max_queries * query_budget_increment_fraction))
 
-		for qb in range(inc, len(T) + inc, inc):
+		for qb in range(inc, theoretical_max_queries + inc, inc):
+			if omit_appendix and qb < theoretical_max_queries:
+				continue
 			if not silent:
 				print(f"query budget: {qb}")
+
 			MPMC.set_query_budget(qb)
 
 			data = {TIME_ALL : [],
@@ -51,6 +57,8 @@ def MeasureMKPSISingle(experiment, V, T, ID_T, ID_V, intersection, unmatched_ids
 					**data }
 
 			helper.append_dicts_to_csv(m, out_directory, f"{MKPSI_NAME}.csv")
+			if qb >= theoretical_max_queries:
+				break
 
 def MeasureMkpsiRecovery(data_path, out_path, repetitions=100, query_budget_increment_fraction=0.05, time_func=time.time):
 	priorities = [(PRIO_TOT, PriorityTotal), (PRIO_POS, PriorityPos), (PRIO_NEG, PriorityNeg)]

@@ -1,16 +1,12 @@
 #! /bin/bash
-if [ -z ${NUM_CORES+x} ]; then
-	echo "Please set the environment variable NUM_CORES to the number of cores you want to use, e.g.,";
-	echo "export NUM_CORES=16"
-	exit 1;
-fi
+
 # check that relevant cores exist and processes can be assigned to them
 all_cores_available=1
-max_core_id=$((NUM_CORES - 1))
-for i in $( seq 0 $max_core_id )
+for i in {0..60}
 do
-	if ! taskset -c ${i} echo "testing cores ${i}"; then
-		echo "failed for cores ${i}";	
+	l2=$((i + 64));
+	if ! taskset -c ${i},${l2} echo "testing cores ${i}, ${l2}"; then
+		echo "failed for cores ${i}, ${l2}";	
 		all_cores_available=0;
 	fi
 done
@@ -18,7 +14,7 @@ done
 if [ $all_cores_available -eq 1 ]; then
 	echo "All cores available";
 else
-	echo "The command 'taskset -c <i> echo \"testing cores <i>\"' has failed for some cores.";
+	echo "The command 'taskset -c <i>, <i+64> echo \"testing cores <i>, <i+64>\"' has failed for some cores. Please make sure this succeeds for i=0..60";
 	exit 1;
 fi
 
@@ -39,16 +35,20 @@ if ! python3 gen_MKPID_data.py --silent experiment_data/small 2 100; then
 fi
 
 # do test run with one iteration on small data sets, this should not take long.
-echo 'Testing attacks on small data set'
-for i in $( seq 0 $max_core_id )
-do	
-	taskset -c ${i} python3 run_artifact.py \
-		-e experiment_data/small \
-		-o measurements/small \
-		--m_PSU 1000 \
-		--m_PSUCA 100 \
-		--repetitions 1 \
-		--num_cores $NUM_CORES \
-		--core_id $i \
-		--silent
+echo 'Testing attacks against MK-PrivateID'
+for i in {0..49}
+do
+	l2=$((i + 64))
+	echo "cores ${i}, ${l2}"
+	# tmux new-session -d -s mpmc-chunk$i "echo '${i} ${l2}' && taskset -c ${i},${l2} python3 run_experiments.py --silent experiment_data/small measurements/small 1 ${i}"
+	taskset -c $i,$l2 python3 run_experiments.py --silent experiment_data/small measurements/small 1 $i
+done
+
+echo 'Testing attacks against PSU / PSU-CA'
+for i in {50..60}
+do
+	l2=$((i + 64))
+	cid=$((i - 50))
+	echo "cores ${i}, ${l2}"
+	taskset -c $i,$l2 python3 measure_PSU.py --silent measurements/small 100 100 1 $cid
 done
