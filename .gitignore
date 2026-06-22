@@ -3,5 +3,6 @@ __pycache__
 
 measurements/*
 !measurements/paper
+!measurements/medium_expected
 experiment_data/*
 !experiment_data/paper/

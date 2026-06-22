@@ -10,7 +10,6 @@ from run_leakage_experiments import run_leakage_experiments
 
 
 if __name__ == '__main__':
-	print("called")
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-e", "--experiments_directory", required=True)
 	parser.add_argument("-o", "--out_directory", required=True)
@@ -41,7 +40,7 @@ if __name__ == '__main__':
 	if not exists(out_directory):
 		makedirs(out_directory)
 
-	log_file = join(join(out_directory, "log"))
+	log_file = join(join(out_directory, "cores.log"))
 	with open(log_file, "a") as f:
 			f.write(f"{datetime.datetime.now()}: \t core {core_id} starting\n")
 

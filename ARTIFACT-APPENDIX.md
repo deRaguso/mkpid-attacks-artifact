@@ -25,17 +25,19 @@ No security features are disabled and no sensitive data is being used.
 ## Basic Requirements
 
 ### Hardware Requirements
-While our experiments could in principle be carried out on a laptop,
-the time to perform all measurements would exceed any practical time frame.
-We therefore ran our experiments on a server with the following specifications:
+Our experiments can be carried out on any hardware with any number of cores.
+To reduce the required runtime, we ran on a server with the following specifications:
 - 64 Core AMD EPYC 7742 2.25GHz Processor
 - 512GB DDR4 3200MHz ECC Server Memory
 
-Our test suite requires 61 cores and used roughly 10GB of memory.
+**Paper Results:**
+The full test suite we ran to obtain the results discussed in the paper requires 61 cores and used roughly 10GB of memory. 
 The AMD EPYC 7742 processor has 64 physical and 128 logical cores, 
 where the logical cores $i$ and $(i+64)$ are mapped to the same physical core.
 We use this when assigning experiments to physical cores. 
 Concretely, any given experiment is assigned to one physical core, i.e., the logical cores $i$ and $(i+64)$ for some $0\leq i\leq 60$ with `taskset -c <i>, <i+64> <command>`.
+
+**Reduced Number of Cores**: Our test suite can run on any arbitrary number of cores $c$ at the cost of a less even distribution of the experiments. This approach also does not require the logical cores $i$ and $i+64$ to be mapped to the same physical core. However, it does require the logical cores $0,\dots,c$ to be available, see [Testing the Environment](#testing-the-environment).
 
 ### Software Requirements
 1. **OS**: Our server has Ubuntu 24.04.4 LTS installed, although our experiment suite should run on other Linux installations as well.
@@ -52,6 +54,8 @@ The artifact should consume no more than 1GB of disk space.
 Assuming Docker is installed, the environment can be set up and verified in under 30 minutes.
 
 Running the full measurement suite with the same number of iterations as we did in our paper takes 30 human-minutes and roughly 250 compute-hours.
+
+We provide a reduced test suite which qualitatively reproduces our main results on smaller data sets and omits the experiments that are only discussed in the appendix of the paper. When executed in an environment with 16 cores, this takes roughly 30 human-minutes and 2 compute-hours.
 
 ## Environment
 
@@ -76,10 +80,8 @@ We provide a docker file with the necessary software dependencies, which should 
 docker build -t artifact_image .
 ```
 
-### Testing the Environment
-
-The environment can be tested by running the experiment suite on very small test data sets. To this end, launch the Docker container, attach the current working directory as a volume, set the context to be
-that volume, and provide an interactive bash terminal:
+launch the Docker container, attach the current working directory as a volume, set the context to be
+that volume, and provide an interactive bash terminal.
 
 ```bash
 docker run --rm -it -v ${PWD}:/workspaces/artifact \
@@ -87,10 +89,20 @@ docker run --rm -it -v ${PWD}:/workspaces/artifact \
     --entrypoint bash artifact_image
 ```
 
-Then within the Docker container, run:
+If you want to run the full (expensive) test suite, no further configuration is necessary. Should you want to run the experiments on a reduced number of cores, please set environment variable `NUM_CORES` to your preferred number of cores, e.g., $16$.
 
 ```bash
-./test.sh
+export NUM_CORES=16
+```
+
+To switch to the full test suite again, simply unset this variable with `unset NUM_CORES`.
+
+### Testing the Environment
+#### Full Test Suite
+If you want to run the full experiment suite, please verify the environment by running `test_paper.sh`.
+
+```bash
+./test_paper.sh
 ```
 The test script will first check that the logical CPUs 0-60 and 64-124 are available and that processes can be bound to them.
 Next, it checks that tmux is functional by starting a dummy session that terminates instantly.
@@ -99,17 +111,29 @@ The experiments are run sequentially, but each experiment is bound to the same p
 To ensure that any Python exceptions are clearly visible, we run the experiments without any informational console outputs apart from some rudimentary progress indicators. 
 This should only take a few minutes, and you should see no error messages or exceptions.
 
-The measurements are stored under `measurements/small`. There should be six files, corresponding to the six attacks shown in the evaluation section of the paper, see the outline below.
+#### Reduced Number of Cores
+To verify that your environment is set up correctly to run the suite on a reduced number of cores, please execute
+
+```bash
+./test.sh
+```
+
+The script checks whether the environment variable `NUM_CORES` is set and if the cores 0, ..., (`NUM_CORES`-1) are available.
+It then generates a range of small test data sets as in the previous section and executes the whole test suite on these small sets. You should see no warnings or errors. This should only take a few minutes, and you should see no error messages or exceptions.
+
+The measurements are stored under `measurements/small`. There should be six CSV files, corresponding to the six attacks shown in the evaluation section of the paper, and one log file `cores.log`, see the outline below.
 Finally, format the data with:
 
 ```bash
 python3 format_measurements.py measurements/small
 ```
-This should result in the file tree shown below. The directory `measureements/small` should contain 160 CSV files. If all files are present, the test was successful.
+
+This should result in the file tree shown below. The directory `measurements/small` should contain 161 files. 
 
 ```
 measurements/small
 ├── Baseline.csv
+├── cores.log
 ├── MKPSI.csv
 ├── PSU.csv
 ├── PSUCA.csv
@@ -195,9 +219,9 @@ Since all experiments are executed simultaneously, we present this as one claim 
 
 ### Main Results and Claims
 
-#### Main Result: Attack Efficiency
+#### Main Result: Attack Efficiency and Behavior
 
-The main result we show with this artifact is that our attacks can be carried out efficiently, i.e., with only a small overhead on top of the normal protocol executions. For all attacks, we measure the runtime for varying parameters, see the experiment description below for more details.
+The main result we show with this artifact is that our attacks can be carried out efficiently, i.e., with only a small overhead on top of the normal protocol executions, and that the runtime and performed number of queries follow our theoretical predictions. For all attacks, we measure the runtime for varying parameters, see the experiment description below for more details.
 For the attacks that perform an adaptive number of queries (ideal functionality evaluations), 
 we additionally measure the number of queries, as well as the performance of the attack under limited query budgets.
 
@@ -221,7 +245,8 @@ In our work, we show the following plots, which we group by attack for this docu
    1. Runtime over match rate $\eta$ (Figure 10a). Runtimes remain roughly constant.
    2. Runtime over target set size $|T|$ (Figure 10b). Grows linearly.
 
-#### Experiment: Run Measurement Suite
+#### Experiment: Run Full Measurement Suite
+This runs all measurements we present in the paper on the same data sets that we used to obtain our results. This is resource and time intensive, see [Experiment: Run Reduced Suite](#experiment-run-reduced-suite) for instructions on how to run the test suite on a smaller number of cores and how to the compute-time.
 - Time: 20 human-minutes + 250 compute-hours. To shorten the compute-time, reduce the number of iterations (currently 50) in lines 6 and 13 in `run_experiments.sh`.
 
 The experiment runs our measurement suite as described above on the data sets described in the paper.
@@ -289,11 +314,71 @@ measurements/paper/
 Since each experiment is repeated $50$ times and we report the average, we do not expect any large deviations from the provided results.
 However, we did not run our experiments within a docker container, see the [Limitations](#limitations)
 
+#### Experiment: Run Reduced Suite
+- Time: 20 human-minutes + 2 compute-hours. 
+
+Since our experiments are quite expensive, we provide instructions for running a reduced test suite on a smaller number of cores in this section. Concretely, the reduced test suite omits the experiments that are only discussed in the appendix of the paper, namely, the recovered fractions of the victim set $Y$ by the PSU-CA and MKPID attacks under limited query budgets and the performance comparison of the alternative heuristics $p^-$ and $p^*$. Only the heuristic $p^+$, which is also discussed in the main body, is measured.
+
+Execute the following instructions within the docker container.
+Start by generating data sets of medium size:
+```bash
+python3 gen_MKPID_data.py --silent experiment_data/medium 2 1000
+```
+
+The data is generated in the same manner as described in the previous section, with the difference that $|Y|=10^3$.
+
+Make sure that `NUM_CORES` is still configured (in case you terminated the container and started a fresh one): `export NUM_CORES=<#availble cores>`.
+Run the experiments using the `run_artifact.sh` script. 
+The `-e` and `-o` flags point the script to the experiment data and the output directory. 
+`--m_PSU` and `--m_PSUCA` configure the size of the victim set $|Y|$ for the PSU and PSU-CA experiments. 
+`-r` specifies the number of iterations per experiment. 
+Finally, if the `--omit_appendix` flag is set, the suite only runs the experiments that are discussed in the main body of the paper. This reduces the compute-time significantly, since some of the omitted experiments are quite expensive. 
+
+```bash
+./run_artifact.sh \
+        -e experiment_data/medium/ \
+        -o measurements/medium \
+        --m_PSU 100000 \
+        --m_PSUCA 1000 \
+        -r 50 \
+        --omit_appendix
+```
+You can check, which cores have terminated by either running `tmux ls` or examining the file `measurements/medium/cores.log`.
+
+The measurements can then be formatted:
+```bash
+python3 format_measurements.py measurements/medium
+```
+
+As in the last section, this results in a file tree similar to the one shown in [Testing the Environment](#testing-the-environment). The files with corresponding plots in the main body of the paper are:
+
+
+```
+measurements/medium/
+   └── PSUCA_queries_over_n, MKPSI_queries_over_n
+      ├── V10000MR0.0.csv
+      ├── V10000MR0.1.csv
+         ...
+      └── V10000MR0.5.csv
+   └── PSU_time_over_MR, PSUCA_time_over_MR, MKPSI_time_over_MR, recon_time_over_MR
+      ├── V10000T5000.csv
+      ├── V10000T10000.csv
+      └── V10000T15000.csv
+   └── PSU_time_over_n, PSUCA_time_over_n, MKPSI_time_over_n, recon_time_over_n
+      ├── V10000MR0.0.csv
+      ├── V10000MR0.1.csv
+         ...
+      └── V10000MR0.5.csv
+```
+Note that since the experiments were run on smaller data sets, the results described in [Main Result: Attack Efficiency](#main-result-attack-efficiency) are reproduced qualitatively, but cannot be quantitatively compared with the measurements from the paper, which we provide in `measurements/paper`.
+However, we provide our results for running this reduced experiment in `measurements/medium_expected`.
 
 ## Limitations
 For the measurements reported in the paper, we did not run our experiments in a docker container, but on the server's OS (Ubuntu 24.04.4 LTS) directly. While we do not expect it, this may result in differences in the runtime measurements. These are hard to estimate without re-running the experiments.
 
 ## Notes on Reusability
+Our measurement infrastructure is flexible with respect to the considered input sizes. Running the attacks against MK-PrivateID with larger inputs can be done by generating larger data sets using `gen_MKPID_data.py`. 
 
-Our measurement infrastructure is flexible with respect to the considered input sizes. Running the attacks against MK-PrivateID with larger inputs can be done by generating larger data sets using `gen_MKPID_data.py`. The input sizes for the attacks against PSU and PSU-CA can be changed by modifying the parameters for `measure_PSU.py` in `run_experiments.sh`.
+Configuring the environment variable `NUM_CORES` and using the script `run_artifact.sh` allows our infrastructure to be run on an arbitrary number of cores and choosing the number of iterations per experiment, the data sets to be used for the experiments with the leakage-based attacks, and the victim set sizes in the experiments with the PSU and PSU-CA attacks.
+
 Our infrastructure includes code to measure the runtime and required number of queries for any attack, as well as re-usable implementations of the relevant ideal functionalities we consider in the paper. New attacks can therefore be added by placing their implementation in the `attacks` folder and extending the measurement scripts accordingly. 
