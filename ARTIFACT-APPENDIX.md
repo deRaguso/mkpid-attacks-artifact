@@ -26,7 +26,7 @@ No security features are disabled and no sensitive data is being used.
 
 ### Hardware Requirements
 Our experiments can be carried out on any hardware with any number of cores.
-To reduce the required runtime, we ran on a server with the following specifications:
+To reduce the required runtime, we ran them on a server with the following specifications:
 - 64 Core AMD EPYC 7742 2.25GHz Processor
 - 512GB DDR4 3200MHz ECC Server Memory
 
@@ -287,28 +287,36 @@ However, this is a superset of the relevant data, as not all CSV files have a co
 
 ```
 measurements/paper/
-   └── PSUCA_queries_over_mr, MKPSI_queries_over_mr (Figure in Appendix)
-      ├── V10000T5000.csv
-      ├── V10000T10000.csv
-      └── V10000T15000.csv
-   └── PSUCA_queries_over_n, MKPSI_queries_over_n
-      ├── V10000MR0.0.csv
-      ├── V10000MR0.1.csv
-         ...
-      └── V10000MR0.5.csv
-   └── PSU_time_over_MR, PSUCA_time_over_MR, MKPSI_time_over_MR, recon_time_over_MR
-      ├── V10000T5000.csv
-      ├── V10000T10000.csv
-      └── V10000T15000.csv
-   └── PSU_time_over_n, PSUCA_time_over_n, MKPSI_time_over_n, recon_time_over_n
-      ├── V10000MR0.0.csv
-      ├── V10000MR0.1.csv
-         ...
-      └── V10000MR0.5.csv
-   └── PSUCA_recovery_over_QB (Figure in Appendix)
-      ├── V10000T5000.csv
-      ├── V10000T10000.csv
-      └── V10000T15000.csv
+   └── PSUCA_queries_over_mr,              (Figure 18a, Appendix H.1)
+       MKPSI_queries_over_mr               (Figure 18b, Appendix H.1)
+        ├── V10000T5000.csv
+        ├── V10000T10000.csv
+        └── V10000T15000.csv
+   └── PSUCA_queries_over_n,               (Figure 10a, Section 8.3)
+       MKPSI_queries_over_n                (Figure 10b, Section 8.3)
+        ├── V10000MR0.0.csv
+        ├── V10000MR0.1.csv
+            ...
+        └── V10000MR0.5.csv
+   └── PSU_time_over_MR,                   (Figure 9a, Section 8.2)
+       PSUCA_time_over_MR,                 (Figure 11a, Section 8.3)
+       MKPSI_time_over_MR                  (Figure 11b, Section 8.3)
+        ├── V10000T5000.csv
+        ├── V10000T10000.csv
+        └── V10000T15000.csv
+   └── recon_time_over_MR/V10000T10000.csv (Figure 12a, Section 8.4)
+   └── PSU_time_over_n,                    (Figure 9b, Section 8.2)
+       PSUCA_time_over_n,                  (Figure 11c, Section 8.3)
+       MKPSI_time_over_n,                  (Figure 11d, Section 8.3)
+        ├── V10000MR0.0.csv
+        ├── V10000MR0.1.csv
+            ...
+        └── V10000MR0.5.csv
+   └── recon_time_over_n/V10000MR0.5.csv   (Figure 12b, Section 8.4)
+   └── PSUCA_recovery_over_QB              (Figure 19, Appendix H.2)
+        ├── V10000T5000.csv
+        ├── V10000T10000.csv
+        └── V10000T15000.csv
 ```
 
 Since each experiment is repeated $50$ times and we report the average, we do not expect any large deviations from the provided results.
@@ -317,7 +325,7 @@ However, we did not run our experiments within a docker container, see the [Limi
 #### Experiment: Run Reduced Suite
 - Time: 20 human-minutes + 2 compute-hours. 
 
-Since our experiments are quite expensive, we provide instructions for running a reduced test suite on a smaller number of cores in this section. Concretely, the reduced test suite omits the experiments that are only discussed in the appendix of the paper, namely, the recovered fractions of the victim set $Y$ by the PSU-CA and MKPID attacks under limited query budgets and the performance comparison of the alternative heuristics $p^-$ and $p^*$. Only the heuristic $p^+$, which is also discussed in the main body, is measured.
+Since our experiments are quite expensive, we provide instructions for running a reduced test suite on a smaller number of cores in this section. Concretely, the reduced test suite omits the experiments that are only discussed in the appendix of the paper, namely, the recovered fractions of the recovery set $Y$ by the PSU-CA and MKPID attacks under limited query budgets and the performance comparison of the alternative heuristics $p^-$ and $p^*$. Only the heuristic $p^+$, which is also discussed in the main body, is measured.
 
 Execute the following instructions within the docker container.
 Start by generating data sets of medium size:
@@ -330,7 +338,7 @@ The data is generated in the same manner as described in the previous section, w
 Make sure that `NUM_CORES` is still configured (in case you terminated the container and started a fresh one): `export NUM_CORES=<#availble cores>`.
 Run the experiments using the `run_artifact.sh` script. 
 The `-e` and `-o` flags point the script to the experiment data and the output directory. 
-`--m_PSU` and `--m_PSUCA` configure the size of the victim set $|Y|$ for the PSU and PSU-CA experiments. 
+`--m_PSU` and `--m_PSUCA` configure the size of the recovery set $|Y|$ for the PSU and PSU-CA experiments. 
 `-r` specifies the number of iterations per experiment. 
 Finally, if the `--omit_appendix` flag is set, the suite only runs the experiments that are discussed in the main body of the paper. This reduces the compute-time significantly, since some of the omitted experiments are quite expensive. 
 
@@ -352,23 +360,29 @@ python3 format_measurements.py measurements/medium
 
 As in the last section, this results in a file tree similar to the one shown in [Testing the Environment](#testing-the-environment). The files with corresponding plots in the main body of the paper are:
 
-
 ```
 measurements/medium/
-   └── PSUCA_queries_over_n, MKPSI_queries_over_n
-      ├── V10000MR0.0.csv
-      ├── V10000MR0.1.csv
-         ...
-      └── V10000MR0.5.csv
-   └── PSU_time_over_MR, PSUCA_time_over_MR, MKPSI_time_over_MR, recon_time_over_MR
-      ├── V10000T5000.csv
-      ├── V10000T10000.csv
-      └── V10000T15000.csv
-   └── PSU_time_over_n, PSUCA_time_over_n, MKPSI_time_over_n, recon_time_over_n
-      ├── V10000MR0.0.csv
-      ├── V10000MR0.1.csv
-         ...
-      └── V10000MR0.5.csv
+   └── PSUCA_queries_over_n,               (Figure 10a, Section 8.3)
+       MKPSI_queries_over_n                (Figure 10b, Section 8.3)
+        ├── V10000MR0.0.csv
+        ├── V10000MR0.1.csv
+           ...
+        └── V10000MR0.5.csv
+   └── PSU_time_over_MR,                   (Figure 9a, Section 8) 
+       PSUCA_time_over_MR,                 (Figure 11a, Section 8) 
+       MKPSI_time_over_MR,                 (Figure 11b, Section 8)
+        ├── V10000T5000.csv
+        ├── V10000T10000.csv
+        └── V10000T15000.csv
+   └── recon_time_over_MR/V10000T10000.csv (Figure 12a, Section 8), 
+   └── PSU_time_over_n,                    (Figure 9b, Section 8)
+       PSUCA_time_over_n,                  (Figure 11c, Section 8)
+       MKPSI_time_over_n                   (Figure 11d, Section 8)
+        ├── V10000MR0.0.csv
+        ├── V10000MR0.1.csv
+            ...
+        └── V10000MR0.5.csv
+   └── recon_time_over_n/V10000MR0.5.csv   (Figure 12b, Section 8)
 ```
 Note that since the experiments were run on smaller data sets, the results described in [Main Result: Attack Efficiency](#main-result-attack-efficiency) are reproduced qualitatively, but cannot be quantitatively compared with the measurements from the paper, which we provide in `measurements/paper`.
 However, we provide our results for running this reduced experiment in `measurements/medium_expected`.
@@ -379,6 +393,6 @@ For the measurements reported in the paper, we did not run our experiments in a 
 ## Notes on Reusability
 Our measurement infrastructure is flexible with respect to the considered input sizes. Running the attacks against MK-PrivateID with larger inputs can be done by generating larger data sets using `gen_MKPID_data.py`. 
 
-Configuring the environment variable `NUM_CORES` and using the script `run_artifact.sh` allows our infrastructure to be run on an arbitrary number of cores and choosing the number of iterations per experiment, the data sets to be used for the experiments with the leakage-based attacks, and the victim set sizes in the experiments with the PSU and PSU-CA attacks.
+Configuring the environment variable `NUM_CORES` and using the script `run_artifact.sh` allows our infrastructure to be run on an arbitrary number of cores and choosing the number of iterations per experiment, the data sets to be used for the experiments with the leakage-based attacks, and the recovery set sizes in the experiments with the PSU and PSU-CA attacks.
 
 Our infrastructure includes code to measure the runtime and required number of queries for any attack, as well as re-usable implementations of the relevant ideal functionalities we consider in the paper. New attacks can therefore be added by placing their implementation in the `attacks` folder and extending the measurement scripts accordingly. 
